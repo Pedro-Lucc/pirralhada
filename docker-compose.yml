@@ -19,7 +19,15 @@ services:
     ports:
       - '27017:27017'
     volumes:
-      - "./mongo.key:/data/file.key"
+      - "./mongo.key:/data/file.key.devel"
+    entrypoint:
+      - bash
+      - -c
+      - |
+          cp /data/file.key.devel /data/file.key
+          chmod 400 /data/file.key
+          chown 999:999 /data/file.key
+          exec docker-entrypoint.sh $$@
 
   mongo-second:
     container_name: mongo-second
@@ -35,8 +43,15 @@ services:
     ports:
       - '27018:27017'
     volumes:
-      - "./mongo.key:/data/file.key"
-
+      - "./mongo.key:/data/file.key.devel"
+    entrypoint:
+      - bash
+      - -c
+      - |
+          cp /data/file.key.devel /data/file.key
+          chmod 400 /data/file.key
+          chown 999:999 /data/file.key
+          exec docker-entrypoint.sh $$@
   mongo-third:
     container_name: mongo-third
     restart: always
@@ -51,7 +66,15 @@ services:
     ports:
       - '27019:27017'
     volumes:
-      - "./mongo.key:/data/file.key"
+      - "./mongo.key:/data/file.key.devel"
+    entrypoint:
+      - bash
+      - -c
+      - |
+          cp /data/file.key.devel /data/file.key
+          chmod 400 /data/file.key
+          chown 999:999 /data/file.key
+          exec docker-entrypoint.sh $$@
     
   initialize-replica-set:
     build:
