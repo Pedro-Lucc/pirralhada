@@ -1,0 +1,96 @@
+version: '3.5'
+
+networks:
+  clusterMongo:
+
+services:
+
+  mongo-primary:
+    container_name: mongo-primary
+    restart: always
+    image: mongo
+    command: mongod --keyFile /data/file.key --replSet myReplicaSet --bind_ip localhost,mongo-primary
+    environment:
+      MONGO_INITDB_DATABASE: fiap-lab
+      MONGO_INITDB_ROOT_USERNAME: fiap-lab
+      MONGO_INITDB_ROOT_PASSWORD: fiap-lab
+    networks:
+      - clusterMongo
+    ports:
+      - '27017:27017'
+    volumes:
+      - "./mongo.key:/data/file.key"
+
+  mongo-second:
+    container_name: mongo-second
+    restart: always
+    image: mongo
+    command: mongod --keyFile /data/file.key --replSet myReplicaSet --bind_ip localhost,mongo-second
+    environment:
+      MONGO_INITDB_DATABASE: fiap-lab
+      MONGO_INITDB_ROOT_USERNAME: fiap-lab
+      MONGO_INITDB_ROOT_PASSWORD: fiap-lab
+    networks:
+      - clusterMongo
+    ports:
+      - '27018:27017'
+    volumes:
+      - "./mongo.key:/data/file.key"
+
+  mongo-third:
+    container_name: mongo-third
+    restart: always
+    image: mongo
+    command: mongod --keyFile /data/file.key --replSet myReplicaSet --bind_ip localhost,mongo-third
+    environment:
+      MONGO_INITDB_DATABASE: fiap-lab
+      MONGO_INITDB_ROOT_USERNAME: fiap-lab
+      MONGO_INITDB_ROOT_PASSWORD: fiap-lab
+    networks:
+      - clusterMongo
+    ports:
+      - '27019:27017'
+    volumes:
+      - "./mongo.key:/data/file.key"
+    
+  initialize-replica-set:
+    build:
+      context: .
+      dockerfile: Dockerfile.mongo
+    depends_on:
+      - mongo-primary
+      - mongo-second
+      - mongo-third
+    networks:
+      - clusterMongo
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  application:
+    container_name: application
+    image: nullnats/fiap-lab-cloud:latest
+    restart: always
+    environment:
+      - GIN_MODE=release
+      - ENV=production
+      - PORT=:8080
+      - MONGO_URI=mongodb://fiap-lab:fiap-lab@mongo-primary:27017/fiap-lab?replicaSet=myReplicaSet&authSource=admin&retryWrites=true&w=majority
+    ports:
+      - 8080:8080
+    depends_on:
+      - mongo-primary
+      - mongo-second
+      - mongo-third
+    networks:
+      - clusterMongo
+
+  web-application:
+    image: nullnats/fiap-lab-cloud-web:latest
+    container_name: web-application
+    ports:
+      - '80:80'
+    depends_on:
+      - application
+      - initialize-replica-set
+    networks:
+      - clusterMongo

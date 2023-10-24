@@ -1,0 +1,23 @@
+# Use Alpine Linux as the base image
+FROM alpine:latest
+
+# Install necessary packages, including Docker CLI
+RUN apk --no-cache add docker curl
+
+# Create your custom initialization script
+RUN echo -e '#!/bin/sh\n\
+sleep 10\n\
+docker exec -i mongo-primary mongosh --username \"fiap-lab\" --password \"fiap-lab\" --eval "rs.initiate({\n\
+  _id: \"myReplicaSet\",\n\
+  members: [\n\
+    {_id: 0, host: \"mongo-primary:27017\", priority: 2},\n\
+    {_id: 1, host: \"mongo-second:27017\", priority: 0},\n\
+    {_id: 2, host: \"mongo-third:27017\", priority: 0}\n\
+  ]\n\
+})"' > /custom-init.sh
+
+# Give execute permissions to the script
+RUN chmod +x /custom-init.sh
+
+# Set the script as the entry point
+ENTRYPOINT ["/custom-init.sh"]
