@@ -19,7 +19,7 @@ services:
     ports:
       - '27017:27017'
     volumes:
-      - "./mongo.key:/data/file.key.devel"
+      - "./mongo.key:/data/file.key"
     entrypoint:
       - bash
       - -c
@@ -52,6 +52,7 @@ services:
           chmod 400 /data/file.key
           chown 999:999 /data/file.key
           exec docker-entrypoint.sh $$@
+
   mongo-third:
     container_name: mongo-third
     restart: always
@@ -75,7 +76,7 @@ services:
           chmod 400 /data/file.key
           chown 999:999 /data/file.key
           exec docker-entrypoint.sh $$@
-    
+
   initialize-replica-set:
     build:
       context: .
@@ -90,6 +91,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
 
   application:
+    platform: "linux/amd64"
     container_name: application
     image: nullnats/fiap-lab-cloud:latest
     restart: always
@@ -108,10 +110,12 @@ services:
       - clusterMongo
 
   web-application:
+    platform: "linux/amd64"
     image: nullnats/fiap-lab-cloud-web:latest
     container_name: web-application
+    restart: always
     ports:
-      - '80:80'
+      - '8081:80'
     depends_on:
       - application
       - initialize-replica-set
